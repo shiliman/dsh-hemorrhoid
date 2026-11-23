@@ -1,0 +1,23 @@
+# dsh-hemorrhoid —— DSH bundle patch
+#
+# 全局加载、每会话默认关：包挂进 profile 的 bundles 后每个会话都看得见工具，
+# 但痔疮本身是每个会话一份、默认不发作。开与关由 hemorrhoid_switch 或面板决定，
+# 注入只注册在那个 agent 自己的 scope 上，不会漏到别的会话。
+#
+# name 必须与包名一致（dsh-hemorrhoid）。
+# 这三个 id 必须一致：package.json 的 name、src/index.js 的 export const name、
+# 本 patch 的 insert.id（本插件没有 client 半，不涉及 __ModuleLoader__）。
+
+- insert:
+    - id: dsh-hemorrhoid
+      name: dsh-hemorrhoid
+      config:
+        # 主机总闸：false = 所有会话都没这回事
+        enabled: true
+        # 新会话默认关，要自己说一句「我得了痔疮」或调工具
+        defaultEnabled: false
+        personaName: 大肥鱼
+        # internal / external / mixed
+        type: mixed
+        # 0-3，越高语气越不对劲
+        eeriness: 2

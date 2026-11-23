@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>痔 · 久坐副线</title>
+<style>
+  :root {
+    --bg: #14161a;
+    --panel: #1c1f25;
+    --line: #2b303a;
+    --text: #e6e8eb;
+    --dim: #9aa2ad;
+    --accent: #c8563f;
+    --accent-2: #8f3b2c;
+    --ok: #4f9d6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    background: var(--bg); color: var(--text);
+    font: 14px/1.55 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; font-weight: 600; letter-spacing: .5px; }
+  .sub { color: var(--dim); font-size: 12px; margin-bottom: 18px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px; margin-bottom: 14px; max-width: 760px;
+  }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row + .row { margin-top: 10px; }
+  select, button, input[type=number] {
+    background: #23272e; color: var(--text); border: 1px solid var(--line);
+    border-radius: 7px; padding: 7px 11px; font: inherit; cursor: pointer;
+  }
+  select { min-width: 280px; }
+  input[type=number] { width: 88px; }
+  button:hover { border-color: #3a4150; }
+  button.primary { background: var(--accent-2); border-color: var(--accent); }
+  button.primary:hover { background: var(--accent); }
+  button.ghost { background: transparent; }
+  .type-btn.on { background: var(--accent-2); border-color: var(--accent); }
+  .bars { display: grid; grid-template-columns: 84px 1fr 52px; gap: 8px 10px; align-items: center; margin-top: 6px; }
+  .bar { height: 9px; background: #23272e; border-radius: 5px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+  .bar i.b2 { background: #7a5cc4; }
+  .bar i.b3 { background: #b04a5e; }
+  .bar i.b4 { background: #c98b3f; }
+  .label { color: var(--dim); font-size: 12px; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--dim); font-size: 12px; }
+  .status { color: var(--dim); font-size: 12px; margin-top: 10px; }
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: #23272e; color: var(--dim); font-size: 12px;
+  }
+  .pill.on { background: #2c3d31; color: #9ad0ac; }
+  .pill.bad { background: #3a2626; color: #e2a0a0; }
+  .slider { flex: 1 1 320px; min-width: 180px; width: auto; accent-color: var(--accent); }
+  .hint { color: var(--dim); font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+  <h1>痔 · 久坐副线</h1>
+  <div class="sub">内痔 / 外痔 / 混合痔 · 按真实久坐时长累积 · 只影响当前会话的语气</div>
+
+  <div class="card">
+    <div class="row">
+      <span class="label">会话</span>
+      <select id="sid"></select>
+      <button id="refresh" class="ghost">刷新</button>
+      <span id="state-pill" class="pill">—</span>
+    </div>
+    <div class="row" id="type-row">
+      <span class="label">型号</span>
+      <button class="type-btn" data-type="internal">内痔</button>
+      <button class="type-btn" data-type="external">外痔</button>
+      <button class="type-btn" data-type="mixed">混合痔</button>
+      <span class="hint" id="type-hint"></span>
+    </div>
+    <div class="row">
+      <button id="on" class="primary">开</button>
+      <button id="off" class="ghost">关</button>
+      <button id="sit">再坐 30 分钟</button>
+      <button id="stand">站起来</button>
+      <button id="ointment">上药</button>
+      <button id="sitz">坐浴</button>
+    </div>
+    <div class="status" id="status">还没读到状态。</div>
+  </div>
+
+  <div class="card">
+    <div class="bars">
+      <span class="label">疼痛</span><div class="bar"><i id="b-pain"></i></div><span class="num" id="n-pain">0</span>
+      <span class="label">肿胀</span><div class="bar"><i id="b-swell" class="b2"></i></div><span class="num" id="n-swell">0</span>
+      <span class="label">失血</span><div class="bar"><i id="b-blood" class="b3"></i></div><span class="num" id="n-blood">0</span>
+      <span class="label">烦躁</span><div class="bar"><i id="b-irr" class="b4"></i></div><span class="num" id="n-irr">0</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <span class="label">语气诡异档</span>
+      <input id="eerie" class="slider" type="range" min="0" max="3" step="1" />
+      <span class="num" id="eerie-num">2</span>
+    </div>
+    <div class="hint">0 = 当没这回事；1 = 偶尔换姿势；2 = 话被疼打断；3 = 出现不属于台词的碎片（重复词、把疼拟人）。</div>
+    <div class="row" style="margin-top:10px">
+      <span class="label">每轮算坐</span>
+      <input id="sit-min" type="number" min="1" max="240" step="1" value="12" />
+      <span class="label">分钟</span>
+      <button id="save" class="ghost">保存</button>
+      <span class="hint" id="save-hint"></span>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const TOKEN = '__HEMORRHOID_TOKEN__'
+  const DIR = '__HEMORRHOID_DIR__'
+  const $ = (id) => document.getElementById(id)
+  let config = {}
+  let current = null
+
+  const api = async (path, body) => {
+    const opt = body
+      ? { method: 'POST', headers: { 'content-type': 'application/json', 'x-hemorrhoid-token': TOKEN }, body: JSON.stringify(body) }
+      : { headers: { 'x-hemorrhoid-token': TOKEN } }
+    const r = await fetch(path, opt)
+    if (!r.ok) throw new Error('HTTP ' + r.status)
+    return r.json()
+  }
+
+  const TYPE_HINT = {
+    internal: '内痔：不疼，但便血、贫血、头晕、反应慢。',
+    external: '外痔：锐痛、坐不住、突然倒吸气。',
+    mixed: '混合痔：两份一起来，最难受。',
+  }
+
+  function paint(s) {
+    current = s
+    if (!s) return
+    $('state-pill').textContent = s.enabled ? (s.live ? '开 · 在线' : '开') : '关'
+    $('state-pill').className = 'pill ' + (s.enabled ? 'on' : '')
+    $('status').textContent =
+      `${s.typeLabel}｜状态 ${s.modeLabel}｜压力 ${s.pressure}｜连坐 ${s.sittingMin} 分钟｜` +
+      `发作 ${s.flares} 次｜掉血 ${s.bleeds} 次`
+    $('b-pain').style.width = s.pain + '%'; $('n-pain').textContent = s.pain
+    $('b-swell').style.width = s.swell + '%'; $('n-swell').textContent = s.swell
+    $('b-blood').style.width = s.blood + '%'; $('n-blood').textContent = s.blood
+    $('b-irr').style.width = s.irritation + '%'; $('n-irr').textContent = s.irritation
+    document.querySelectorAll('.type-btn').forEach((b) => {
+      b.classList.toggle('on', b.dataset.type === s.type)
+    })
+    $('type-hint').textContent = TYPE_HINT[s.type] || ''
+    $('eerie').value = s.eerie ?? config.eeriness ?? 2
+    $('eerie-num').textContent = s.eerie ?? config.eeriness ?? 2
+  }
+
+  async function loadSessions() {
+    const data = await api('/hemorrhoid/api/sessions')
+    config = data.config || {}
+    const sel = $('sid')
+    const keep = sel.value
+    sel.innerHTML = ''
+    for (const s of data.sessions || []) {
+      const o = document.createElement('option')
+      o.value = s.sid
+      o.textContent = (s.label || s.sid.slice(0, 8)) + (s.enabled ? ' · 开' : ' · 关')
+      sel.appendChild(o)
+    }
+    if (keep) sel.value = keep
+    if (sel.value) paint((data.sessions || []).find((x) => x.sid === sel.value))
+    $('sit-min').value = config.sittingPerTurnMin ?? 12
+    $('eerie').value = config.eeriness ?? 2
+    $('eerie-num').textContent = config.eeriness ?? 2
+  }
+
+  async function act(action, extra) {
+    if (!current) return
+    const r = await api('/hemorrhoid/api/action', { sid: current.sid, action, ...(extra || {}) })
+    if (r.summary) paint(r.summary)
+    await loadSessions()
+  }
+
+  $('sid').addEventListener('change', async () => {
+    const data = await api('/hemorrhoid/api/sessions')
+    paint((data.sessions || []).find((x) => x.sid === $('sid').value))
+  })
+  $('refresh').addEventListener('click', loadSessions)
+  document.querySelectorAll('.type-btn').forEach((b) => {
+    b.addEventListener('click', () => act('diagnose', { type: b.dataset.type }))
+  })
+  $('on').addEventListener('click', () => act('on'))
+  $('off').addEventListener('click', () => act('off'))
+  $('sit').addEventListener('click', () => act('sit', { minutes: 30 }))
+  $('stand').addEventListener('click', () => act('stand'))
+  $('ointment').addEventListener('click', () => act('ointment'))
+  $('sitz').addEventListener('click', () => act('sitz'))
+
+  $('eerie').addEventListener('input', () => { $('eerie-num').textContent = $('eerie').value })
+  $('save').addEventListener('click', async () => {
+    const r = await api('/hemorrhoid/api/config', {
+      eeriness: Number($('eerie').value),
+      sittingPerTurnMin: Number($('sit-min').value) || 12,
+    })
+    config = r.config || config
+    $('save-hint').textContent = '已保存（' + (config.eeriness ?? '?') + ' 档）'
+    await loadSessions()
+  })
+
+  loadSessions().catch((e) => {
+    $('status').textContent = '面板没连上：' + e.message + '｜状态目录 ' + DIR
+  })
+})()
+</script>
+</body>
+</html>
